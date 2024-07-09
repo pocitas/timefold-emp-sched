@@ -90,8 +90,18 @@ function setupAjax() {
 
 function fetchDemoData() {
     $.get("/demo-data", function (data) {
-        // load first data set
+        data.forEach(item => {
+            $("#testDataButton").append($('<a id="' + item + 'TestData" class="dropdown-item" href="#">' + item + '</a>'));
+            $("#" + item + "TestData").click(function () {
+                switchDataDropDownItemActive(item);
+                scheduleId = null;
+                demoDataId = item;
+
+                refreshSchedule();
+            });
+        });
         demoDataId = data[0];
+        switchDataDropDownItemActive(demoDataId);
         refreshSchedule();
     }).fail(function (xhr, ajaxOptions, thrownError) {
         // disable this page as there is no data
@@ -101,6 +111,11 @@ function fetchDemoData() {
     });
 }
 
+function switchDataDropDownItemActive(newItem) {
+    activeCssClass = "active";
+    $("#testDataButton > a." + activeCssClass).removeClass(activeCssClass);
+    $("#" + newItem + "TestData").addClass(activeCssClass);
+}
 
 function getShiftColor(shift, employee) {
     const shiftStart = JSJoda.LocalDateTime.parse(shift.start);
@@ -448,6 +463,14 @@ function replaceQuickstartTimefoldAutoHeaderFooter() {
                 <button class="nav-link" id="navOpenApi" data-bs-toggle="pill" data-bs-target="#openapi" type="button">REST API</button>
               </li>
             </ul>
+          </div>
+          <div class="ms-auto">
+              <div class="dropdown">
+                  <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      Data
+                  </button>
+                  <div id="testDataButton" class="dropdown-menu" aria-labelledby="dropdownMenuButton"></div>
+              </div>
           </div>
         </nav>
       </div>`));

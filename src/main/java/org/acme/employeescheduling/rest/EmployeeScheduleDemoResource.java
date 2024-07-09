@@ -46,6 +46,6 @@ public class EmployeeScheduleDemoResource {
     @GET
     @Path("/{demoDataId}")
     public Response generate(@PathParam("demoDataId") DemoData demoData) {
-        return Response.ok(dataGenerator.generateDemoData()).build();
+        return Response.ok(dataGenerator.generateDemoData(demoData)).build();
     }
 }

@@ -26,17 +26,78 @@ import org.acme.employeescheduling.domain.Shift;
 
 @ApplicationScoped
 public class DemoDataGenerator {
-
     public enum DemoData {
-        SMALL,
-        LARGE
+        SMALL(new DemoDataParameters(
+                List.of("Ambulatory care", "Critical care", "Pediatric care"),
+                List.of("Doctor", "Nurse"),
+                List.of("Anaesthetics", "Cardiology"),
+                14,
+                15,
+                List.of(new CountDistribution(1, 3),
+                        new CountDistribution(2, 1)
+                ),
+                List.of(new CountDistribution(1, 0.9),
+                        new CountDistribution(2, 0.1)
+                ),
+                List.of(new CountDistribution(1, 4),
+                        new CountDistribution(2, 3),
+                        new CountDistribution(3, 2),
+                        new CountDistribution(4, 1)
+                ),
+                0
+        )),
+        LARGE(new DemoDataParameters(
+                List.of("Ambulatory care",
+                        "Neurology",
+                        "Critical care",
+                        "Pediatric care",
+                        "Surgery",
+                        "Radiology",
+                        "Outpatient"),
+                List.of("Doctor", "Nurse"),
+                List.of("Anaesthetics", "Cardiology", "Radiology"),
+                28,
+                50,
+                List.of(new CountDistribution(1, 3),
+                        new CountDistribution(2, 1)
+                ),
+                List.of(new CountDistribution(1, 0.5),
+                        new CountDistribution(2, 0.3),
+                        new CountDistribution(3, 0.2)
+                ),
+                List.of(new CountDistribution(5, 4),
+                        new CountDistribution(10, 3),
+                        new CountDistribution(15, 2),
+                        new CountDistribution(20, 1)
+                ),
+                0
+        ));
+
+        private final DemoDataParameters parameters;
+
+        DemoData(DemoDataParameters parameters) {
+            this.parameters = parameters;
+        }
+
+        public DemoDataParameters getParameters() {
+            return parameters;
+        }
     }
+
+    public record CountDistribution(int count, double weight) {}
+
+    public record DemoDataParameters(List<String> locations,
+                                     List<String> requiredSkills,
+                                     List<String> optionalSkills,
+                                     int daysInSchedule,
+                                     int employeeCount,
+                                     List<CountDistribution> optionalSkillDistribution,
+                                     List<CountDistribution> shiftCountDistribution,
+                                     List<CountDistribution> availabilityCountDistribution,
+                                     int randomSeed) {}
 
     private static final String[] FIRST_NAMES = { "Amy", "Beth", "Chad", "Dan", "Elsa", "Flo", "Gus", "Hugo", "Ivy", "Jay" };
     private static final String[] LAST_NAMES = { "Cole", "Fox", "Green", "Jones", "King", "Li", "Poe", "Rye", "Smith", "Watt" };
-    private static final String[] REQUIRED_SKILLS = { "Doctor", "Nurse" };
-    private static final String[] OPTIONAL_SKILLS = { "Anaesthetics", "Cardiology" };
-    private static final String[] LOCATIONS = { "Ambulatory care", "Critical care", "Pediatric care" };
     private static final Duration SHIFT_LENGTH = Duration.ofHours(8);
     private static final LocalTime MORNING_SHIFT_START_TIME = LocalTime.of(6, 0);
     private static final LocalTime DAY_SHIFT_START_TIME = LocalTime.of(9, 0);
@@ -51,16 +112,19 @@ public class DemoDataGenerator {
 
     Map<String, List<LocalTime>> locationToShiftStartTimeListMap = new HashMap<>();
 
-    public EmployeeSchedule generateDemoData() {
+    public EmployeeSchedule generateDemoData(DemoData demoData) {
+        return generateDemoData(demoData.getParameters());
+    }
+
+    public EmployeeSchedule generateDemoData(DemoDataParameters parameters) {
         EmployeeSchedule employeeSchedule = new EmployeeSchedule();
 
-        int initialRosterLengthInDays = 14;
         LocalDate startDate = LocalDate.now().with(TemporalAdjusters.nextOrSame(DayOfWeek.MONDAY));
 
-        Random random = new Random(0);
+        Random random = new Random(parameters.randomSeed);
 
         int shiftTemplateIndex = 0;
-        for (String location : LOCATIONS) {
+        for (String location : parameters.locations) {
             locationToShiftStartTimeListMap.put(location, List.of(SHIFT_START_TIMES_COMBOS[shiftTemplateIndex]));
             shiftTemplateIndex = (shiftTemplateIndex + 1) % SHIFT_START_TIMES_COMBOS.length;
         }
@@ -69,17 +133,18 @@ public class DemoDataGenerator {
         Collections.shuffle(namePermutations, random);
 
         List<Employee> employees = new ArrayList<>();
-        for (int i = 0; i < 15; i++) {
-            Set<String> skills = pickSubset(List.of(OPTIONAL_SKILLS), random, 3, 1);
-            skills.add(pickRandom(REQUIRED_SKILLS, random));
+        for (int i = 0; i < parameters.employeeCount; i++) {
+            Set<String> skills = pickSubset(parameters.optionalSkills, random, parameters.optionalSkillDistribution);
+            skills.add(pickRandom(parameters.requiredSkills, random));
             Employee employee = new Employee(namePermutations.get(i), skills, new LinkedHashSet<>(), new LinkedHashSet<>(), new LinkedHashSet<>());
             employees.add(employee);
         }
         employeeSchedule.setEmployees(employees);
 
         List<Shift> shifts = new LinkedList<>();
-        for (int i = 0; i < initialRosterLengthInDays; i++) {
-            Set<Employee> employeesWithAvailabilitiesOnDay = pickSubset(employees, random, 4, 3, 2, 1);
+        for (int i = 0; i < parameters.daysInSchedule; i++) {
+            Set<Employee> employeesWithAvailabilitiesOnDay = pickSubset(employees, random,
+                    parameters.availabilityCountDistribution);
             LocalDate date = startDate.plusDays(i);
             for (Employee employee : employeesWithAvailabilitiesOnDay) {
                 switch (random.nextInt(3)) {
@@ -88,7 +153,7 @@ public class DemoDataGenerator {
                     case 2 -> employee.getDesiredDates().add(date);
                 }
             }
-            shifts.addAll(generateShiftsForDay(date, random));
+            shifts.addAll(generateShiftsForDay(parameters, date, random));
         }
         AtomicInteger countShift = new AtomicInteger();
         shifts.forEach(s -> s.setId(Integer.toString(countShift.getAndIncrement())));
@@ -97,59 +162,60 @@ public class DemoDataGenerator {
         return employeeSchedule;
     }
 
-    private List<Shift> generateShiftsForDay(LocalDate date, Random random) {
+    private List<Shift> generateShiftsForDay(DemoDataParameters parameters, LocalDate date, Random random) {
         List<Shift> shifts = new LinkedList<>();
-        for (String location : LOCATIONS) {
+        for (String location : parameters.locations) {
             List<LocalTime> shiftStartTimes = locationToShiftStartTimeListMap.get(location);
             for (LocalTime shiftStartTime : shiftStartTimes) {
                 LocalDateTime shiftStartDateTime = date.atTime(shiftStartTime);
                 LocalDateTime shiftEndDateTime = shiftStartDateTime.plus(SHIFT_LENGTH);
-                shifts.addAll(generateShiftForTimeslot(shiftStartDateTime, shiftEndDateTime, location, random));
+                shifts.addAll(generateShiftForTimeslot(parameters, shiftStartDateTime, shiftEndDateTime, location, random));
             }
         }
         return shifts;
     }
 
-    private List<Shift> generateShiftForTimeslot(LocalDateTime timeslotStart, LocalDateTime timeslotEnd, String location,
+    private List<Shift> generateShiftForTimeslot(DemoDataParameters parameters,
+            LocalDateTime timeslotStart, LocalDateTime timeslotEnd, String location,
             Random random) {
-        int shiftCount = 1;
-
-        if (random.nextDouble() > 0.9) {
-            // generate an extra shift
-            shiftCount++;
-        }
+        var shiftCount = pickCount(random, parameters.shiftCountDistribution);
 
         List<Shift> shifts = new LinkedList<>();
         for (int i = 0; i < shiftCount; i++) {
             String requiredSkill;
             if (random.nextBoolean()) {
-                requiredSkill = pickRandom(REQUIRED_SKILLS, random);
+                requiredSkill = pickRandom(parameters.requiredSkills, random);
             } else {
-                requiredSkill = pickRandom(OPTIONAL_SKILLS, random);
+                requiredSkill = pickRandom(parameters.optionalSkills, random);
             }
             shifts.add(new Shift(timeslotStart, timeslotEnd, location, requiredSkill));
         }
         return shifts;
     }
 
-    private <T> T pickRandom(T[] source, Random random) {
-        return source[random.nextInt(source.length)];
+    private <T> T pickRandom(List<T> source, Random random) {
+        return source.get(random.nextInt(source.size()));
     }
 
-    private <T> Set<T> pickSubset(List<T> sourceSet, Random random, int... distribution) {
-        int probabilitySum = 0;
-        for (int probability : distribution) {
-            probabilitySum += probability;
+    private int pickCount(Random random, List<CountDistribution> countDistribution) {
+        double probabilitySum = 0;
+        for (var possibility : countDistribution) {
+            probabilitySum += possibility.weight;
         }
-        int choice = random.nextInt(probabilitySum);
+        var choice = random.nextDouble(probabilitySum);
         int numOfItems = 0;
-        while (choice >= distribution[numOfItems]) {
-            choice -= distribution[numOfItems];
+        while (choice >= countDistribution.get(numOfItems).weight) {
+            choice -= countDistribution.get(numOfItems).weight;
             numOfItems++;
         }
+        return countDistribution.get(numOfItems).count;
+    }
+
+    private <T> Set<T> pickSubset(List<T> sourceSet, Random random, List<CountDistribution> countDistribution) {
+        var count = pickCount(random, countDistribution);
         List<T> items = new ArrayList<>(sourceSet);
         Collections.shuffle(items, random);
-        return new HashSet<>(items.subList(0, numOfItems + 1));
+        return new HashSet<>(items.subList(0, count));
     }
 
     private List<String> joinAllCombinations(String[]... partArrays) {
