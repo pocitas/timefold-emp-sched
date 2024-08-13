@@ -25,7 +25,7 @@ class EmployeeScheduleResourceTest {
 
     @Test
     @Timeout(600_000)
-    void solveDemoDataUntilFeasible() throws InterruptedException {
+    void solveDemoDataUntilFeasible() {
 
         EmployeeSchedule testSchedule = given()
                 .when().get("/demo-data/SMALL")

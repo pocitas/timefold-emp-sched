@@ -8,10 +8,12 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.function.Function;
 
-import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore;
+import ai.timefold.solver.core.api.score.buildin.hardsoftbigdecimal.HardSoftBigDecimalScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
+import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.ConstraintProvider;
+import ai.timefold.solver.core.api.score.stream.common.LoadBalance;
 
 import org.acme.employeescheduling.domain.Employee;
 import org.acme.employeescheduling.domain.Shift;
@@ -42,20 +44,21 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                 // Soft constraints
                 undesiredDayForEmployee(constraintFactory),
                 desiredDayForEmployee(constraintFactory),
+                balanceEmployeeShiftAssignments(constraintFactory)
         };
     }
 
     Constraint requiredSkill(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Shift.class)
                 .filter(shift -> !shift.getEmployee().getSkills().contains(shift.getRequiredSkill()))
-                .penalize(HardSoftScore.ONE_HARD)
+                .penalize(HardSoftBigDecimalScore.ONE_HARD)
                 .asConstraint("Missing required skill");
     }
 
     Constraint noOverlappingShifts(ConstraintFactory constraintFactory) {
         return constraintFactory.forEachUniquePair(Shift.class, equal(Shift::getEmployee),
                 overlapping(Shift::getStart, Shift::getEnd))
-                .penalize(HardSoftScore.ONE_HARD,
+                .penalize(HardSoftBigDecimalScore.ONE_HARD,
                         EmployeeSchedulingConstraintProvider::getMinuteOverlap)
                 .asConstraint("Overlapping shift");
     }
@@ -65,7 +68,7 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                 .join(Shift.class, equal(Shift::getEmployee), lessThanOrEqual(Shift::getEnd, Shift::getStart))
                 .filter((firstShift,
                         secondShift) -> Duration.between(firstShift.getEnd(), secondShift.getStart()).toHours() < 10)
-                .penalize(HardSoftScore.ONE_HARD,
+                .penalize(HardSoftBigDecimalScore.ONE_HARD,
                         (firstShift, secondShift) -> {
                             int breakLength = (int) Duration.between(firstShift.getEnd(), secondShift.getStart()).toMinutes();
                             return (10 * 60) - breakLength;
@@ -76,7 +79,7 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
     Constraint oneShiftPerDay(ConstraintFactory constraintFactory) {
         return constraintFactory.forEachUniquePair(Shift.class, equal(Shift::getEmployee),
                 equal(shift -> shift.getStart().toLocalDate()))
-                .penalize(HardSoftScore.ONE_HARD)
+                .penalize(HardSoftBigDecimalScore.ONE_HARD)
                 .asConstraint("Max one shift per day");
     }
 
@@ -85,7 +88,7 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                 .join(Employee.class, equal(Shift::getEmployee, Function.identity()))
                 .flattenLast(Employee::getUnavailableDates)
                 .filter(Shift::isOverlappingWithDate)
-                .penalize(HardSoftScore.ONE_HARD, Shift::getOverlappingDurationInMinutes)
+                .penalize(HardSoftBigDecimalScore.ONE_HARD, Shift::getOverlappingDurationInMinutes)
                 .asConstraint("Unavailable employee");
     }
 
@@ -94,7 +97,7 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                 .join(Employee.class, equal(Shift::getEmployee, Function.identity()))
                 .flattenLast(Employee::getUndesiredDates)
                 .filter(Shift::isOverlappingWithDate)
-                .penalize(HardSoftScore.ONE_SOFT, Shift::getOverlappingDurationInMinutes)
+                .penalize(HardSoftBigDecimalScore.ONE_SOFT, Shift::getOverlappingDurationInMinutes)
                 .asConstraint("Undesired day for employee");
     }
 
@@ -103,8 +106,18 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                 .join(Employee.class, equal(Shift::getEmployee, Function.identity()))
                 .flattenLast(Employee::getDesiredDates)
                 .filter(Shift::isOverlappingWithDate)
-                .reward(HardSoftScore.ONE_SOFT, Shift::getOverlappingDurationInMinutes)
+                .reward(HardSoftBigDecimalScore.ONE_SOFT, Shift::getOverlappingDurationInMinutes)
                 .asConstraint("Desired day for employee");
+    }
+
+    Constraint balanceEmployeeShiftAssignments(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(Shift.class)
+                .groupBy(Shift::getEmployee, ConstraintCollectors.count())
+                .complement(Employee.class, e -> 0) // Include all employees which are not assigned to any shift.c
+                .groupBy(ConstraintCollectors.loadBalance((employee, shiftCount) -> employee,
+                        (employee, shiftCount) -> shiftCount))
+                .penalizeBigDecimal(HardSoftBigDecimalScore.ONE_SOFT, LoadBalance::unfairness)
+                .asConstraint("Balance employee shift assignments");
     }
 
 }

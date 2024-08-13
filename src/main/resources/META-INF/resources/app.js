@@ -388,8 +388,8 @@ function analyze() {
 function getScoreComponents(score) {
     let components = {hard: 0, medium: 0, soft: 0};
 
-    $.each([...score.matchAll(/(-?[0-9]+)(hard|medium|soft)/g)], (i, parts) => {
-        components[parts[2]] = parseInt(parts[1], 10);
+    $.each([...score.matchAll(/(-?\d*(\.\d+)?)(hard|medium|soft)/g)], (i, parts) => {
+        components[parts[3]] = parseFloat(parts[1], 10);
     });
 
     return components;
