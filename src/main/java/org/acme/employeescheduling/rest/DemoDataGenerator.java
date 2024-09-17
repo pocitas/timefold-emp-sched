@@ -96,7 +96,7 @@ public class DemoDataGenerator {
                                      List<CountDistribution> availabilityCountDistribution,
                                      int randomSeed) {}
 
-    private static final String[] FIRST_NAMES = { "Amy", "Beth", "Chad", "Dan", "Elsa", "Flo", "Gus", "Hugo", "Ivy", "Jay" };
+    private static final String[] FIRST_NAMES = { "Amy", "Beth", "Carl", "Dan", "Elsa", "Flo", "Gus", "Hugo", "Ivy", "Jay" };
     private static final String[] LAST_NAMES = { "Cole", "Fox", "Green", "Jones", "King", "Li", "Poe", "Rye", "Smith", "Watt" };
     private static final Duration SHIFT_LENGTH = Duration.ofHours(8);
     private static final LocalTime MORNING_SHIFT_START_TIME = LocalTime.of(6, 0);
