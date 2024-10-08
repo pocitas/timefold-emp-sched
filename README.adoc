@@ -5,6 +5,7 @@ Schedule shifts to employees, accounting for employee availability and shift ski
 image::./employee-scheduling-screenshot.png[]
 
 * <<run,Run the application>>
+* <<enterprise,Run the application with Timefold Solver Enterprise Edition>>
 * <<package,Run the packaged application>>
 * <<container,Run the application in a container>>
 * <<native,Run it native>>
