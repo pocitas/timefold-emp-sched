@@ -7,6 +7,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
+import ai.timefold.solver.core.api.domain.entity.PlanningPin;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 
@@ -23,6 +24,10 @@ public class Shift {
 
     @PlanningVariable
     private Employee employee;
+
+    // Pin the shift to prevent it from being changed
+    @PlanningPin
+    private boolean pinned = false;
 
     public Shift() {
     }
@@ -108,6 +113,14 @@ public class Shift {
         LocalDateTime minEndTime = firstEndDateTime.isBefore(secondEndDateTime) ? firstEndDateTime : secondEndDateTime;
         long minutes = maxStartTime.until(minEndTime, ChronoUnit.MINUTES);
         return minutes > 0 ? (int) minutes : 0;
+    }
+
+    public boolean isPinned() {
+        return pinned;
+    }
+
+    public void setPinned(boolean pinned) {
+        this.pinned = pinned;
     }
 
     @Override
