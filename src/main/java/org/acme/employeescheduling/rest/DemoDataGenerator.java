@@ -182,13 +182,13 @@ public class DemoDataGenerator {
 
         List<Shift> shifts = new LinkedList<>();
         for (int i = 0; i < shiftCount; i++) {
-            String requiredSkill;
+            Set<String> requiredSkills = new HashSet<>();
             if (random.nextBoolean()) {
-                requiredSkill = pickRandom(parameters.requiredSkills, random);
+                requiredSkills.add(pickRandom(parameters.requiredSkills, random));
             } else {
-                requiredSkill = pickRandom(parameters.optionalSkills, random);
+                requiredSkills.add(pickRandom(parameters.optionalSkills, random));
             }
-            shifts.add(new Shift(timeslotStart, timeslotEnd, location, requiredSkill));
+            shifts.add(new Shift(timeslotStart, timeslotEnd, location, requiredSkills));
         }
         return shifts;
     }

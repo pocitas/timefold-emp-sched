@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
+import java.util.Set;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.entity.PlanningPin;
@@ -20,7 +21,7 @@ public class Shift {
     private LocalDateTime end;
 
     private String location;
-    private String requiredSkill;
+    private Set<String> requiredSkills = Set.of();
 
     @PlanningVariable
     private Employee employee;
@@ -32,20 +33,20 @@ public class Shift {
     public Shift() {
     }
 
-    public Shift(LocalDateTime start, LocalDateTime end, String location, String requiredSkill) {
-        this(start, end, location, requiredSkill, null);
+    public Shift(LocalDateTime start, LocalDateTime end, String location, Set<String> requiredSkills) {
+        this(start, end, location, requiredSkills, null);
     }
 
-    public Shift(LocalDateTime start, LocalDateTime end, String location, String requiredSkill, Employee employee) {
-        this(null, start, end, location, requiredSkill, employee);
+    public Shift(LocalDateTime start, LocalDateTime end, String location, Set<String> requiredSkills, Employee employee) {
+        this(null, start, end, location, requiredSkills, employee);
     }
 
-    public Shift(String id, LocalDateTime start, LocalDateTime end, String location, String requiredSkill, Employee employee) {
+    public Shift(String id, LocalDateTime start, LocalDateTime end, String location, Set<String> requiredSkills, Employee employee) {
         this.id = id;
         this.start = start;
         this.end = end;
         this.location = location;
-        this.requiredSkill = requiredSkill;
+        this.requiredSkills = requiredSkills;
         this.employee = employee;
     }
 
@@ -81,12 +82,12 @@ public class Shift {
         this.location = location;
     }
 
-    public String getRequiredSkill() {
-        return requiredSkill;
+    public Set<String> getRequiredSkills() {
+        return requiredSkills;
     }
 
-    public void setRequiredSkill(String requiredSkill) {
-        this.requiredSkill = requiredSkill;
+    public void setRequiredSkills(Set<String> requiredSkills) {
+        this.requiredSkills = requiredSkills;
     }
 
     public Employee getEmployee() {
