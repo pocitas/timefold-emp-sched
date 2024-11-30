@@ -252,4 +252,58 @@ class EmployeeSchedulingConstraintProviderTest {
 		.penalizesBy(0);
 
     }
+
+    @Test
+    void shortenedBreakCompensated() {
+        Employee employee1 = new Employee("Amy", null, null, null, null);
+        Employee employee2 = new Employee("Beth", null, null, null, null);
+
+        // First break is 11 hours, second break is 11 hours (no penalty)
+        constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::shortenedBreakCompensated)
+            .given(employee1, employee2,
+                new Shift("1", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee1),
+                new Shift("2", DAY_END_TIME.plusHours(11), DAY_START_TIME.plusDays(1), "Location 2", Set.of("Skill"), employee1),
+                new Shift("3", DAY_START_TIME.plusDays(1).plusHours(11), DAY_END_TIME.plusDays(2), "Location 3", Set.of("Skill"), employee1))
+            .penalizes(0);
+
+        // First break is 10 hours, second break is 12 hours (no penalty)
+        constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::shortenedBreakCompensated)
+            .given(employee1, employee2,
+                new Shift("1", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee1),
+                new Shift("2", DAY_END_TIME.plusHours(10), DAY_START_TIME.plusDays(1), "Location 2", Set.of("Skill"), employee1),
+                new Shift("3", DAY_START_TIME.plusDays(1).plusHours(12), DAY_END_TIME.plusDays(2), "Location 3", Set.of("Skill"), employee1))
+            .penalizes(0);
+
+        // First break is 9 hours, second break is 13 hours (no penalty)
+        constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::shortenedBreakCompensated)
+            .given(employee1, employee2,
+                new Shift("1", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee1),
+                new Shift("2", DAY_END_TIME.plusHours(9), DAY_START_TIME.plusDays(1), "Location 2", Set.of("Skill"), employee1),
+                new Shift("3", DAY_START_TIME.plusDays(1).plusHours(13), DAY_END_TIME.plusDays(2), "Location 3", Set.of("Skill"), employee1))
+            .penalizes(0);
+
+        // First break is 9 hours, second break is 12 hours (penalty for 1 hour shortage)
+        constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::shortenedBreakCompensated)
+            .given(employee1, employee2,
+                new Shift("1", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee1),
+                new Shift("2", DAY_END_TIME.plusHours(9), DAY_START_TIME.plusDays(1), "Location 2", Set.of("Skill"), employee1),
+                new Shift("3", DAY_START_TIME.plusDays(1).plusHours(12), DAY_END_TIME.plusDays(2), "Location 3", Set.of("Skill"), employee1))
+            .penalizesBy(60);
+
+        // First break is 8 hours, second break is 11 hours (penalty for 3 hours shortage)
+        constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::shortenedBreakCompensated)
+            .given(employee1, employee2,
+                new Shift("1", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee1),
+                new Shift("2", DAY_END_TIME.plusHours(8), DAY_START_TIME.plusDays(1), "Location 2", Set.of("Skill"), employee1),
+                new Shift("3", DAY_START_TIME.plusDays(1).plusHours(11), DAY_END_TIME.plusDays(2), "Location 3", Set.of("Skill"), employee1))
+            .penalizesBy(180);
+
+        // Different employees (no penalty)
+        constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::shortenedBreakCompensated)
+            .given(employee1, employee2,
+                new Shift("1", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee1),
+                new Shift("2", DAY_END_TIME.plusHours(8), DAY_START_TIME.plusDays(1), "Location 2", Set.of("Skill"), employee2),
+                new Shift("3", DAY_START_TIME.plusDays(1).plusHours(9), DAY_END_TIME.plusDays(2), "Location 3", Set.of("Skill"), employee1))
+            .penalizes(0);
+    }
 }
