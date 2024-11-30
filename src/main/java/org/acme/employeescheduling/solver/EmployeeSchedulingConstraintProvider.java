@@ -45,7 +45,9 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                 // Soft constraints
                 undesiredDayForEmployee(constraintFactory),
                 desiredDayForEmployee(constraintFactory),
-                balanceEmployeeShiftAssignments(constraintFactory)
+                balanceEmployeeShiftAssignments(constraintFactory),
+                shortenedBreak(constraintFactory),
+                sameLocationAsYesterday(constraintFactory) // New constraint
         };
     }
 
@@ -139,5 +141,26 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                         (employee, shiftCount) -> shiftCount))
                 .penalizeBigDecimal(HardSoftBigDecimalScore.ONE_SOFT, LoadBalance::unfairness)
                 .asConstraint("Balance employee shift assignments");
+    }
+
+    Constraint shortenedBreak(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(Shift.class)
+            .join(Shift.class, equal(Shift::getEmployee), lessThanOrEqual(Shift::getEnd, Shift::getStart))
+            .filter((firstShift, secondShift) -> Duration.between(firstShift.getEnd(), secondShift.getStart()).toHours() < 11)
+            .penalize(HardSoftBigDecimalScore.ONE_SOFT, (firstShift, secondShift) -> {
+                int breakLength = (int) Duration.between(firstShift.getEnd(), secondShift.getStart()).toMinutes();
+                return (11 * 60) - breakLength;
+            })
+            .asConstraint("Shortened break");
+    }
+
+    Constraint sameLocationAsYesterday(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(Shift.class)
+            .join(Shift.class, equal(Shift::getEmployee), lessThanOrEqual(Shift::getEnd, Shift::getStart))
+            .filter((firstShift, secondShift) -> 
+                Duration.between(firstShift.getEnd(), secondShift.getStart()).toHours() <= 18 &&
+                firstShift.getLocation().equals(secondShift.getLocation()))
+            .reward(HardSoftBigDecimalScore.ONE_SOFT)
+            .asConstraint("Same location as yesterday");
     }
 }
