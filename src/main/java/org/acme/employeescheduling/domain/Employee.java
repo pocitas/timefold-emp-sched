@@ -14,18 +14,25 @@ public class Employee {
     private Set<LocalDate> unavailableDates;
     private Set<LocalDate> undesiredDates;
     private Set<LocalDate> desiredDates;
+    private String carpoolGroup = null;
 
     public Employee() {
 
     }
 
     public Employee(String name, Set<String> skills,
-        Set<LocalDate> unavailableDates, Set<LocalDate> undesiredDates, Set<LocalDate> desiredDates) {
+        Set<LocalDate> unavailableDates, Set<LocalDate> undesiredDates, Set<LocalDate> desiredDates, String carpoolGroup) {
         this.name = name;
         this.skills = skills;
         this.unavailableDates = unavailableDates;
         this.undesiredDates = undesiredDates;
         this.desiredDates = desiredDates;
+        this.carpoolGroup = carpoolGroup;
+    }
+
+    public Employee(String name, Set<String> skills,
+        Set<LocalDate> unavailableDates, Set<LocalDate> undesiredDates, Set<LocalDate> desiredDates) {
+        this(name, skills, unavailableDates, undesiredDates, desiredDates, null);
     }
 
     public String getName() {
@@ -66,6 +73,14 @@ public class Employee {
 
     public void setDesiredDates(Set<LocalDate> desiredDates) {
         this.desiredDates = desiredDates;
+    }
+
+    public String getCarpoolGroup() {
+        return carpoolGroup;
+    }
+
+    public void setCarpoolGroup(String carpoolGroup) {
+        this.carpoolGroup = carpoolGroup;
     }
 
     @Override

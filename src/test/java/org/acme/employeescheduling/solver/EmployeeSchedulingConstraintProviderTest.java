@@ -10,8 +10,6 @@ import java.util.Set;
 import jakarta.inject.Inject;
 
 import ai.timefold.solver.test.api.score.stream.ConstraintVerifier;
-import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore;
-
 import org.acme.employeescheduling.domain.Employee;
 import org.acme.employeescheduling.domain.EmployeeSchedule;
 import org.acme.employeescheduling.domain.Shift;
@@ -355,5 +353,31 @@ class EmployeeSchedulingConstraintProviderTest {
 						new Shift("3", DAY_2.atTime(18, 0), DAY_2.atTime(22, 0), "LocationB", Collections.emptySet(),
 								employee))
 				.rewards(1);
+	}
+
+	@Test
+	void carpoolGroup() {
+		Employee employee1 = new Employee("Amy", null, null, null, null, "Group1");
+		Employee employee2 = new Employee("Beth", null, null, null, null, "Group1");
+		Employee employee3 = new Employee("Charlie", null, null, null, null, "Group2");
+		Employee employee4 = new Employee("David", null, null, null, null, "Group1");
+
+		 // Three employees in Group1 have shifts that start and end at the same time (reward 3 soft)
+		constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::carpoolGroup)
+				.given(employee1, employee2, employee3, employee4,
+						new Shift("1", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee1),
+						new Shift("2", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee2),
+						new Shift("3", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee3),
+						new Shift("4", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee4))
+				.rewardsWith(3);
+
+		// Employee 1 and 4 from the Group1 have shifts that start and end at the same time (reward 2 soft)
+		constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::carpoolGroup)
+				.given(employee1, employee2, employee3, employee4,
+						new Shift("1", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee1),
+						new Shift("2", AFTERNOON_START_TIME, AFTERNOON_END_TIME, "Location", Set.of("Skill"), employee2),
+						new Shift("3", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee3),
+						new Shift("4", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee4))
+				.rewardsWith(2);
 	}
 }
