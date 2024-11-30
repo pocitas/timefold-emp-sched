@@ -38,7 +38,8 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                 // Hard constraints
                 requiredSkill(constraintFactory),
                 noOverlappingShifts(constraintFactory),
-                atLeast10HoursBetweenTwoShifts(constraintFactory),
+                minimumBreak8Hours(constraintFactory),
+                shortenedBreakCompensated(constraintFactory),
                 oneShiftPerDay(constraintFactory),
                 unavailableEmployee(constraintFactory),
                 // Soft constraints
@@ -63,17 +64,37 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                 .asConstraint("Overlapping shift");
     }
 
-    Constraint atLeast10HoursBetweenTwoShifts(ConstraintFactory constraintFactory) {
+    Constraint minimumBreak8Hours(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(Shift.class)
                 .join(Shift.class, equal(Shift::getEmployee), lessThanOrEqual(Shift::getEnd, Shift::getStart))
                 .filter((firstShift,
-                        secondShift) -> Duration.between(firstShift.getEnd(), secondShift.getStart()).toHours() < 10)
+                        secondShift) -> Duration.between(firstShift.getEnd(), secondShift.getStart()).toHours() < 8)
                 .penalize(HardSoftBigDecimalScore.ONE_HARD,
                         (firstShift, secondShift) -> {
                             int breakLength = (int) Duration.between(firstShift.getEnd(), secondShift.getStart()).toMinutes();
-                            return (10 * 60) - breakLength;
+                            return (8 * 60) - breakLength;
                         })
-                .asConstraint("At least 10 hours between 2 shifts");
+                .asConstraint("At least 8 hours between 2 shifts");
+    }
+
+    Constraint shortenedBreakCompensated(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(Shift.class)
+                .join(Shift.class, equal(Shift::getEmployee), lessThanOrEqual(Shift::getEnd, Shift::getStart))
+                .join(Shift.class, equal((firstShift, secondShift) -> firstShift.getEmployee(), Shift::getEmployee),
+                        lessThanOrEqual((firstShift, secondShift) -> secondShift.getEnd(), Shift::getStart))
+                .filter((firstShift, secondShift, thirdShift) -> {
+                    long firstBreakMinutes = Duration.between(firstShift.getEnd(), secondShift.getStart()).toMinutes();
+                    long secondBreakMinutes = Duration.between(secondShift.getEnd(), thirdShift.getStart()).toMinutes();
+                    long shortage = (11 * 60) - firstBreakMinutes;
+                    return firstBreakMinutes < 11 * 60 && firstBreakMinutes >= 8 * 60 && secondBreakMinutes < (11 * 60 + shortage);
+                })
+                .penalize(HardSoftBigDecimalScore.ONE_HARD, (firstShift, secondShift, thirdShift) -> {
+                    long firstBreakMinutes = Duration.between(firstShift.getEnd(), secondShift.getStart()).toMinutes();
+                    long secondBreakMinutes = Duration.between(secondShift.getEnd(), thirdShift.getStart()).toMinutes();
+                    long shortage = (11 * 60) - firstBreakMinutes;
+                    return (int) (shortage - (secondBreakMinutes - 11 * 60));
+                })
+                .asConstraint("Shortened break must be compensated by next break");
     }
 
     Constraint oneShiftPerDay(ConstraintFactory constraintFactory) {
@@ -119,5 +140,4 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                 .penalizeBigDecimal(HardSoftBigDecimalScore.ONE_SOFT, LoadBalance::unfairness)
                 .asConstraint("Balance employee shift assignments");
     }
-
 }

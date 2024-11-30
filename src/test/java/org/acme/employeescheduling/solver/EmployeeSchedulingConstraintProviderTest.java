@@ -20,13 +20,21 @@ import io.quarkus.test.junit.QuarkusTest;
 
 @QuarkusTest
 class EmployeeSchedulingConstraintProviderTest {
-    private static final LocalDate DAY_1 = LocalDate.of(2021, 2, 1);
-    private static final LocalDate DAY_3 = LocalDate.of(2021, 2, 3);
+    private static final LocalDate DAY_1 = LocalDate.of(2025, 2, 1);
+	private static final LocalDate DAY_2 = LocalDate.of(2025, 2, 2);
+    private static final LocalDate DAY_3 = LocalDate.of(2025, 2, 3);
 
     private static final LocalDateTime DAY_START_TIME = DAY_1.atTime(LocalTime.of(9, 0));
     private static final LocalDateTime DAY_END_TIME = DAY_1.atTime(LocalTime.of(17, 0));
     private static final LocalDateTime AFTERNOON_START_TIME = DAY_1.atTime(LocalTime.of(13, 0));
     private static final LocalDateTime AFTERNOON_END_TIME = DAY_1.atTime(LocalTime.of(21, 0));
+	private static final LocalDateTime A_START_TIME = DAY_1.atTime(LocalTime.of(10, 0));
+	private static final LocalDateTime A_END_TIME = DAY_1.atTime(LocalTime.of(22, 0));
+	private static final LocalDateTime D_START_TIME = DAY_1.atTime(LocalTime.of(7, 0));
+	private static final LocalDateTime D_END_TIME = DAY_1.atTime(LocalTime.of(19, 0));
+	private static final LocalDateTime N_START_TIME = DAY_1.atTime(LocalTime.of(19, 0));
+	private static final LocalDateTime N_END_TIME = DAY_2.atTime(LocalTime.of(7, 0));
+	
 
     @Inject
     ConstraintVerifier<EmployeeSchedulingConstraintProvider, EmployeeSchedule> constraintVerifier;
@@ -115,37 +123,43 @@ class EmployeeSchedulingConstraintProviderTest {
     }
 
     @Test
-    void atLeast10HoursBetweenConsecutiveShifts() {
+    void minimumBreak8Hours() {
 	Employee employee1 = new Employee("Amy", null, null, null, null);
 	Employee employee2 = new Employee("Beth", null, null, null, null);
-	constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::atLeast10HoursBetweenTwoShifts)
+	constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::minimumBreak8Hours)
 		.given(employee1, employee2,
-			new Shift("1", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee1),
-			new Shift("2", AFTERNOON_END_TIME, DAY_START_TIME.plusDays(1), "Location 2", Set.of("Skill"), employee1))
-		.penalizesBy(360);
-	constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::atLeast10HoursBetweenTwoShifts)
+			// Break 3 hours
+			new Shift("1", N_START_TIME, N_END_TIME, "Location", Set.of("Skill"), employee1),
+			new Shift("2", A_START_TIME.plusDays(1), A_END_TIME.plusDays(1), "Location 2", Set.of("Skill"), employee1))
+		.penalizesBy(300);
+	constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::minimumBreak8Hours)
+		// Break 0 hours
 		.given(employee1, employee2,
 			new Shift("1", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee1),
 			new Shift("2", DAY_END_TIME, DAY_START_TIME.plusDays(1), "Location 2", Set.of("Skill"), employee1))
-		.penalizesBy(600);
-	constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::atLeast10HoursBetweenTwoShifts)
+		.penalizesBy(480);
+	constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::minimumBreak8Hours)
 		.given(employee1, employee2,
+			// Break 0 hours, switched order
 			new Shift("1", DAY_END_TIME, DAY_START_TIME.plusDays(1), "Location", Set.of("Skill"), employee1),
 			new Shift("2", DAY_START_TIME, DAY_END_TIME, "Location 2", Set.of("Skill"), employee1))
-		.penalizesBy(600);
-	constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::atLeast10HoursBetweenTwoShifts)
+		.penalizesBy(480);
+	constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::minimumBreak8Hours)
 		.given(employee1, employee2,
+			// Break 8 hours
 			new Shift("1", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee1),
-			new Shift("2", DAY_END_TIME.plusHours(10), DAY_START_TIME.plusDays(1), "Location 2", Set.of("Skill"),
+			new Shift("2", DAY_END_TIME.plusHours(8), DAY_START_TIME.plusDays(1), "Location 2", Set.of("Skill"),
 				employee1))
 		.penalizes(0);
-	constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::atLeast10HoursBetweenTwoShifts)
+	constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::minimumBreak8Hours)
 		.given(employee1, employee2,
+			// Different employees
 			new Shift("1", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee1),
 			new Shift("2", AFTERNOON_END_TIME, DAY_START_TIME.plusDays(1), "Location 2", Set.of("Skill"), employee2))
 		.penalizes(0);
-	constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::noOverlappingShifts)
+	constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::minimumBreak8Hours)
 		.given(employee1, employee2,
+			// Break 16 hours
 			new Shift("1", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee1),
 			new Shift("2", DAY_START_TIME.plusDays(1), DAY_END_TIME.plusDays(1), "Location 2", Set.of("Skill"), employee1))
 		.penalizes(0);
