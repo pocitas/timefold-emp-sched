@@ -3,6 +3,7 @@ package org.acme.employeescheduling.domain;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.Set;
@@ -15,13 +16,13 @@ import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 @PlanningEntity
 public class Shift {
     @PlanningId
-    private String id;
-
+    private String id; // optional
     private LocalDateTime start;
     private LocalDateTime end;
-
     private String location;
-    private Set<String> requiredSkills = Set.of();
+	private String shiftType;
+    private Set<String> requiredSkills = Set.of(); // optional
+    private Integer worktime = (int) Duration.between(start, end).toMinutes(); // optional
 
     @PlanningVariable
     private Employee employee;
@@ -32,22 +33,31 @@ public class Shift {
 
     public Shift() {
     }
+	
+	public Shift(LocalDateTime start, LocalDateTime end, String location) {
+		this(start, end, location, Set.of());
+	}
 
     public Shift(LocalDateTime start, LocalDateTime end, String location, Set<String> requiredSkills) {
         this(start, end, location, requiredSkills, null);
     }
 
     public Shift(LocalDateTime start, LocalDateTime end, String location, Set<String> requiredSkills, Employee employee) {
-        this(null, start, end, location, requiredSkills, employee);
+        this(null, start, end, location, requiredSkills, (int) Duration.between(start, end).toMinutes(), employee);
     }
 
-    public Shift(String id, LocalDateTime start, LocalDateTime end, String location, Set<String> requiredSkills, Employee employee) {
+	public Shift(String id, LocalDateTime start, LocalDateTime end, String location, Set<String> requiredSkills, Employee employee) {
+        this(null, start, end, location, requiredSkills, (int) Duration.between(start, end).toMinutes(), employee);
+    }
+
+    public Shift(String id, LocalDateTime start, LocalDateTime end, String location, Set<String> requiredSkills, Integer worktime, Employee employee) {
         this.id = id;
         this.start = start;
         this.end = end;
         this.location = location;
         this.requiredSkills = requiredSkills;
         this.employee = employee;
+        this.worktime = worktime;
     }
 
     public String getId() {
@@ -82,6 +92,14 @@ public class Shift {
         this.location = location;
     }
 
+    public String getShiftType() {
+        return shiftType;
+    }
+
+    public void setShiftType(String shiftType) {
+        this.shiftType = shiftType;
+    }
+
     public Set<String> getRequiredSkills() {
         return requiredSkills;
     }
@@ -96,6 +114,14 @@ public class Shift {
 
     public void setEmployee(Employee employee) {
         this.employee = employee;
+    }
+
+    public Integer getWorktime() {
+        return worktime;
+    }
+
+    public void setWorktime(Integer worktime) {
+        this.worktime = worktime != null ? worktime : (int) Duration.between(start, end).toMinutes();
     }
 
     public boolean isOverlappingWithDate(LocalDate date) {

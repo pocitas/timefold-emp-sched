@@ -260,8 +260,7 @@ class EmployeeSchedulingConstraintProviderTest {
 						new Shift("1", DAY_START_TIME.minusDays(1), DAY_END_TIME, "Location", Set.of("Skill"),
 								employee1))
 				.penalizesByMoreThan(0);
-		// Every employee has a shift assigned; the schedule is once again perfectly
-		// balanced.
+		// Every employee has a shift assigned; the schedule is once again perfectly balanced.
 		constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::balanceEmployeeShiftAssignments)
 				.given(employee1, employee2,
 						new Shift("1", DAY_START_TIME.minusDays(1), DAY_END_TIME, "Location", Set.of("Skill"),
@@ -269,7 +268,18 @@ class EmployeeSchedulingConstraintProviderTest {
 						new Shift("2", DAY_START_TIME.minusDays(1), DAY_END_TIME, "Location", Set.of("Skill"),
 								employee2))
 				.penalizesBy(0);
-
+		// Employee 1 has more worktime than employee 2; the schedule is less balanced.
+		constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::balanceEmployeeShiftAssignments)
+				.given(employee1, employee2,
+						new Shift("1", DAY_START_TIME.minusDays(1), DAY_END_TIME, "Location", Set.of("Skill"),
+								employee1),
+						new Shift("2", DAY_START_TIME.minusDays(1), DAY_END_TIME.plusHours(4), "Location", Set.of("Skill"),
+								employee1),
+						new Shift("3", DAY_START_TIME.minusDays(1), DAY_END_TIME, "Location", Set.of("Skill"),
+								employee2),
+						new Shift("4", DAY_START_TIME.minusDays(1), DAY_END_TIME, "Location", Set.of("Skill"),
+								employee2))
+				.penalizesByMoreThan(0);
 	}
 
 	@Test
