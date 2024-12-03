@@ -388,4 +388,32 @@ class EmployeeSchedulingConstraintProviderTest {
 						new Shift("4", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee4))
 				.rewardsWith(2);
 	}
+
+	@Test
+	void balanceShiftTypes() {
+		Employee employee1 = new Employee("Amy", null, null, null, null);
+		Employee employee2 = new Employee("Beth", null, null, null, null);
+		Employee employee3 = new Employee("Charlie", null, null, null, null);
+
+		// Both employees have the same number of distinct shift types (no penalty)
+		constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::balanceShiftTypes)
+				.given(employee1, employee2,
+						new Shift("1", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee1, 480, "TypeA"),
+						new Shift("2", DAY_START_TIME.plusDays(1), DAY_END_TIME.plusDays(1), "Location", Set.of("Skill"), employee1, 480, "TypeB"),
+						new Shift("3", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee2, 480, "TypeA"),
+						new Shift("4", DAY_START_TIME.plusDays(1), DAY_END_TIME.plusDays(1), "Location", Set.of("Skill"), employee2, 480, "TypeB"),
+						new Shift("3", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee3, 480, "TypeA"),
+						new Shift("4", DAY_START_TIME.plusDays(1), DAY_END_TIME.plusDays(1), "Location", Set.of("Skill"), employee3, 480, "TypeB"))
+				.penalizesBy(0);
+
+		// Employee 1 has more distinct shift types than employee 2 (penalty)
+		constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::balanceShiftTypes)
+				.given(employee1, employee2,
+						new Shift("1", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee1, 480, "TypeA"),
+						new Shift("2", DAY_START_TIME.plusDays(1), DAY_END_TIME.plusDays(1), "Location", Set.of("Skill"), employee1, 480, "TypeB"),
+						new Shift("3", DAY_START_TIME.plusDays(2), DAY_END_TIME.plusDays(2), "Location", Set.of("Skill"), employee1, 480, "TypeC"),
+						new Shift("4", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee2, 480, "TypeA"),
+						new Shift("5", DAY_START_TIME.plusDays(1), DAY_END_TIME.plusDays(1), "Location", Set.of("Skill"), employee2, 480, "TypeA"))
+				.penalizesByMoreThan(0);
+	}
 }
