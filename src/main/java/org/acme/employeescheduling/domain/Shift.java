@@ -20,9 +20,9 @@ public class Shift {
     private LocalDateTime start;
     private LocalDateTime end;
     private String location;
-	private String shiftType = null; // optional
     private Set<String> requiredSkills = Set.of(); // optional
-    private Integer worktime = (int) Duration.between(start, end).toMinutes(); // optional
+    private Integer worktime;
+    private String shiftType;
 
     @PlanningVariable
     private Employee employee;
@@ -61,6 +61,15 @@ public class Shift {
         this.requiredSkills = requiredSkills;
         this.employee = employee;
         this.worktime = worktime;
+        this.shiftType = shiftType;
+    }
+
+    public String getShiftType() {
+		return shiftType;
+    }
+
+    public void setShiftType(String shiftType) {
+        this.shiftType = shiftType;
     }
 
     public String getId() {
@@ -95,14 +104,6 @@ public class Shift {
         this.location = location;
     }
 
-    public String getShiftType() {
-		return shiftType != null ? shiftType : "not defined";
-    }
-
-    public void setShiftType(String shiftType) {
-        this.shiftType = shiftType;
-    }
-
     public Set<String> getRequiredSkills() {
         return requiredSkills;
     }
@@ -120,11 +121,11 @@ public class Shift {
     }
 
     public Integer getWorktime() {
-        return worktime;
+        return worktime != null ? worktime : (int) Duration.between(start, end).toMinutes();
     }
 
     public void setWorktime(Integer worktime) {
-        this.worktime = worktime != null ? worktime : (int) Duration.between(start, end).toMinutes();
+        this.worktime = worktime;
     }
 
     public boolean isOverlappingWithDate(LocalDate date) {

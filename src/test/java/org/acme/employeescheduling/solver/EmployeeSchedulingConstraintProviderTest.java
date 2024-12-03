@@ -29,8 +29,6 @@ class EmployeeSchedulingConstraintProviderTest {
 	private static final LocalDateTime AFTERNOON_END_TIME = DAY_1.atTime(LocalTime.of(21, 0));
 	private static final LocalDateTime A_START_TIME = DAY_1.atTime(LocalTime.of(10, 0));
 	private static final LocalDateTime A_END_TIME = DAY_1.atTime(LocalTime.of(22, 0));
-	private static final LocalDateTime D_START_TIME = DAY_1.atTime(LocalTime.of(7, 0));
-	private static final LocalDateTime D_END_TIME = DAY_1.atTime(LocalTime.of(19, 0));
 	private static final LocalDateTime N_START_TIME = DAY_1.atTime(LocalTime.of(19, 0));
 	private static final LocalDateTime N_END_TIME = DAY_2.atTime(LocalTime.of(7, 0));
 
