@@ -20,7 +20,7 @@ public class Shift {
     private LocalDateTime start;
     private LocalDateTime end;
     private String location;
-	private String shiftType;
+	private String shiftType = null; // optional
     private Set<String> requiredSkills = Set.of(); // optional
     private Integer worktime = (int) Duration.between(start, end).toMinutes(); // optional
 
@@ -43,14 +43,17 @@ public class Shift {
     }
 
     public Shift(LocalDateTime start, LocalDateTime end, String location, Set<String> requiredSkills, Employee employee) {
-        this(null, start, end, location, requiredSkills, (int) Duration.between(start, end).toMinutes(), employee);
+        this(null, start, end, location, requiredSkills, employee, (int) Duration.between(start, end).toMinutes());
     }
 
-	public Shift(String id, LocalDateTime start, LocalDateTime end, String location, Set<String> requiredSkills, Employee employee) {
-        this(null, start, end, location, requiredSkills, (int) Duration.between(start, end).toMinutes(), employee);
+    public Shift(String id, LocalDateTime start, LocalDateTime end, String location, Set<String> requiredSkills, Employee employee) {
+        this(id, start, end, location, requiredSkills, employee, (int) Duration.between(start, end).toMinutes());
     }
 
-    public Shift(String id, LocalDateTime start, LocalDateTime end, String location, Set<String> requiredSkills, Integer worktime, Employee employee) {
+	public Shift(String id, LocalDateTime start, LocalDateTime end, String location, Set<String> requiredSkills, Employee employee, int worktime) {
+		this(id, start, end, location, requiredSkills, employee, worktime, null);
+	}
+    public Shift(String id, LocalDateTime start, LocalDateTime end, String location, Set<String> requiredSkills, Employee employee, int worktime, String shiftType) {
         this.id = id;
         this.start = start;
         this.end = end;
@@ -93,7 +96,7 @@ public class Shift {
     }
 
     public String getShiftType() {
-        return shiftType;
+		return shiftType != null ? shiftType : "not defined";
     }
 
     public void setShiftType(String shiftType) {
