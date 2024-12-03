@@ -15,10 +15,10 @@ public class ConstraintConfig {
 	
 
 	// Soft penalties
-	private final int desiredDayForEmployeeReward = 1;
-	private final int sameLocationAsYesterdayReward = 1;
-	private final int carpoolGroupReward = 2;
-	private final int balanceShiftTypesPenalty = 1;
+	private final int desiredDayForEmployeeReward = 2;
+	private final int sameLocationAsYesterdayReward = 2;
+	private final int carpoolGroupReward = 1;
+	private final int balanceShiftTypesPenalty = 2;
 	
 
 	public int getRequiredSkillPenalty() {

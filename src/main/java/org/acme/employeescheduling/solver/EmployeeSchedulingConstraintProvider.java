@@ -8,8 +8,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.function.Function;
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import ai.timefold.solver.core.api.score.buildin.hardsoftbigdecimal.HardSoftBigDecimalScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
