@@ -191,13 +191,21 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
 				})
 				.asConstraint("Carpool group shifts start and end at the same time");
 	}
-	
+
 	Constraint balanceShiftTypes(ConstraintFactory constraintFactory) {
 		return constraintFactory.forEach(Shift.class)
-				.groupBy(Shift::getEmployee, ConstraintCollectors.countDistinct(Shift::getShiftType))
-				.groupBy(ConstraintCollectors.loadBalance((employee, distinctShiftTypes) -> employee,
-						(employee, distinctShiftTypes) -> distinctShiftTypes))
-				.penalizeBigDecimal(HardSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(Math.pow(2, config.getBalanceShiftTypesPenalty()))), LoadBalance::unfairness)
+				.groupBy(Shift::getShiftType, ConstraintCollectors.count())
+				.join(constraintFactory.forEach(Employee.class))
+				.groupBy((shiftType, count, employee) -> employee, ConstraintCollectors.toMap((shiftType, count, employee) -> shiftType, (shiftType, count, employee) -> count, Integer::sum))
+				.penalizeBigDecimal(HardSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(Math.pow(2, config.getBalanceShiftTypesPenalty()))), 
+						(employee, shiftTypeCount) -> {
+							long totalShifts = shiftTypeCount.values().stream().mapToLong(Integer::longValue).sum();
+							long expectedShiftsPerType = totalShifts / shiftTypeCount.size();
+							long imbalance = shiftTypeCount.values().stream()
+									.mapToLong(count -> Math.abs(count - expectedShiftsPerType))
+									.sum();
+							return BigDecimal.valueOf(imbalance);
+						})
 				.asConstraint("Balance shift types among employees");
 	}
 }

@@ -15,24 +15,31 @@ public class Employee {
     private Set<LocalDate> undesiredDates;
     private Set<LocalDate> desiredDates;
     private String carpoolGroup = null;
+    private String balanceGroup;
 
     public Employee() {
 
     }
 
     public Employee(String name, Set<String> skills,
-        Set<LocalDate> unavailableDates, Set<LocalDate> undesiredDates, Set<LocalDate> desiredDates, String carpoolGroup) {
+        Set<LocalDate> unavailableDates, Set<LocalDate> undesiredDates, Set<LocalDate> desiredDates, String carpoolGroup, String balanceGroup) {
         this.name = name;
         this.skills = skills;
         this.unavailableDates = unavailableDates;
         this.undesiredDates = undesiredDates;
         this.desiredDates = desiredDates;
         this.carpoolGroup = carpoolGroup;
+        this.balanceGroup = balanceGroup;
+    }
+
+    public Employee(String name, Set<String> skills,
+        Set<LocalDate> unavailableDates, Set<LocalDate> undesiredDates, Set<LocalDate> desiredDates, String carpoolGroup) {
+        this(name, skills, unavailableDates, undesiredDates, desiredDates, carpoolGroup, null);
     }
 
     public Employee(String name, Set<String> skills,
         Set<LocalDate> unavailableDates, Set<LocalDate> undesiredDates, Set<LocalDate> desiredDates) {
-        this(name, skills, unavailableDates, undesiredDates, desiredDates, null);
+        this(name, skills, unavailableDates, undesiredDates, desiredDates, null, null);
     }
 
     public String getName() {
@@ -81,6 +88,14 @@ public class Employee {
 
     public void setCarpoolGroup(String carpoolGroup) {
         this.carpoolGroup = carpoolGroup;
+    }
+
+    public String getBalanceGroup() {
+        return balanceGroup;
+    }
+
+    public void setBalanceGroup(String balanceGroup) {
+        this.balanceGroup = balanceGroup;
     }
 
     @Override

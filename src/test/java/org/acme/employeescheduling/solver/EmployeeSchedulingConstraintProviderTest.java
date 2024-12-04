@@ -406,25 +406,23 @@ class EmployeeSchedulingConstraintProviderTest {
 		Employee employee2 = new Employee("Beth", null, null, null, null);
 		Employee employee3 = new Employee("Charlie", null, null, null, null);
 
-		// Both employees have the same number of distinct shift types (no penalty)
+		// All employees have the same number of shifts of the same type
 		constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::balanceShiftTypes)
-				.given(employee1, employee2,
+				.given(employee1, employee2, employee3,
 						new Shift("1", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee1, 480, "TypeA"),
-						new Shift("2", DAY_START_TIME.plusDays(1), DAY_END_TIME.plusDays(1), "Location", Set.of("Skill"), employee1, 480, "TypeB"),
-						new Shift("3", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee2, 480, "TypeA"),
-						new Shift("4", DAY_START_TIME.plusDays(1), DAY_END_TIME.plusDays(1), "Location", Set.of("Skill"), employee2, 480, "TypeB"),
-						new Shift("3", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee3, 480, "TypeA"),
-						new Shift("4", DAY_START_TIME.plusDays(1), DAY_END_TIME.plusDays(1), "Location", Set.of("Skill"), employee3, 480, "TypeB"))
+						new Shift("2", DAY_START_TIME.plusDays(1), DAY_END_TIME.plusDays(1), "Location", Set.of("Skill"), employee2, 480, "TypeA"),
+						new Shift("3", DAY_START_TIME.plusDays(2), DAY_END_TIME.plusDays(2), "Location", Set.of("Skill"), employee3, 480, "TypeA"))
 				.penalizesBy(0);
 
-		// Employee 1 has more distinct shift types than employee 2 (penalty)
+		// Employee 1 has more shifts of the same type than others
 		constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::balanceShiftTypes)
-				.given(employee1, employee2,
+				.given(employee1, employee2, employee3,
 						new Shift("1", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee1, 480, "TypeA"),
-						new Shift("2", DAY_START_TIME.plusDays(1), DAY_END_TIME.plusDays(1), "Location", Set.of("Skill"), employee1, 480, "TypeB"),
-						new Shift("3", DAY_START_TIME.plusDays(2), DAY_END_TIME.plusDays(2), "Location", Set.of("Skill"), employee1, 480, "TypeC"),
-						new Shift("4", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee2, 480, "TypeA"),
-						new Shift("5", DAY_START_TIME.plusDays(1), DAY_END_TIME.plusDays(1), "Location", Set.of("Skill"), employee2, 480, "TypeA"))
+						new Shift("2", DAY_START_TIME.plusDays(1), DAY_END_TIME.plusDays(1), "Location", Set.of("Skill"), employee1, 480, "TypeA"),
+						new Shift("3", DAY_START_TIME.plusDays(2), DAY_END_TIME.plusDays(2), "Location", Set.of("Skill"), employee2, 480, "TypeA"),
+						new Shift("4", DAY_START_TIME.plusDays(3), DAY_END_TIME.plusDays(3), "Location", Set.of("Skill"), employee2, 480, "TypeA"),
+						new Shift("5", DAY_START_TIME.plusDays(4), DAY_END_TIME.plusDays(4), "Location", Set.of("Skill"), employee3, 480, "TypeB"),
+						new Shift("6", DAY_START_TIME.plusDays(5), DAY_END_TIME.plusDays(5), "Location", Set.of("Skill"), employee3, 480, "TypeB"))
 				.penalizesByMoreThan(0);
 	}
 }
