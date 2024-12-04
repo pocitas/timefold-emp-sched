@@ -165,10 +165,11 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
 	Constraint sameLocationAsYesterday(ConstraintFactory constraintFactory) {
 		return constraintFactory.forEach(Shift.class)
 				.join(Shift.class, equal(Shift::getEmployee), lessThanOrEqual(Shift::getEnd, Shift::getStart))
-				.filter((firstShift,
-						secondShift) -> Duration.between(firstShift.getEnd(), secondShift.getStart()).toHours() <= 18 &&
-								firstShift.getLocation().equals(secondShift.getLocation()))
-				.reward(HardSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(Math.pow(2, config.getSameLocationAsYesterdayReward()))))
+				.filter((firstShift, secondShift) -> Duration.between(firstShift.getEnd(), secondShift.getStart()).toHours() <= 18 &&
+						firstShift.getLocation().equals(secondShift.getLocation()))
+				.reward(HardSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(Math.pow(2, config.getSameLocationAsYesterdayReward()))), 
+						(firstShift, secondShift) -> (int) Duration.between(firstShift.getStart(), firstShift.getEnd()).toMinutes() +
+						(int) Duration.between(secondShift.getStart(), secondShift.getEnd()).toMinutes())
 				.asConstraint("Same location as yesterday");
 	}
 
@@ -176,15 +177,17 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
 		return constraintFactory.forEach(Shift.class)
 				// Group shifts by the carpool group of the employee
 				.groupBy(shift -> shift.getEmployee().getCarpoolGroup(), ConstraintCollectors.toList())
-				// Filter to ensure there are at least 2 employees in the group
-				.filter((carpoolGroup, shifts) -> shifts.size() > 1)
-				// Reward based on the number of employees that match the start and end times
+				// Filter to ensure there are at least 2 employees in the group and carpoolGroup is not null
+				.filter((carpoolGroup, shifts) -> carpoolGroup != null && shifts.size() > 1)
+				// Reward based on the total minutes of matched shifts duration
 				.reward(HardSoftBigDecimalScore.ofSoft(BigDecimal.valueOf(Math.pow(2, config.getCarpoolGroupReward()))), (carpoolGroup, shifts) -> {
-					long matchingShifts = shifts.stream()
+					// Calculate the total duration of shifts that start and end at the same time
+					long totalMatchingMinutes = shifts.stream()
 							.filter(shift -> shift.getStart().equals(shifts.get(0).getStart())
 									&& shift.getEnd().equals(shifts.get(0).getEnd()))
-							.count();
-					return (int) matchingShifts;
+							.mapToLong(shift -> Duration.between(shift.getStart(), shift.getEnd()).toMinutes())
+							.sum();
+					return (int) totalMatchingMinutes;
 				})
 				.asConstraint("Carpool group shifts start and end at the same time");
 	}

@@ -360,7 +360,7 @@ class EmployeeSchedulingConstraintProviderTest {
 								employee),
 						new Shift("3", DAY_2.atTime(18, 0), DAY_2.atTime(22, 0), "LocationB", Collections.emptySet(),
 								employee))
-				.rewards(1);
+				.rewardsWith((int) Duration.ofHours(8).toMinutes() + (int) Duration.ofHours(8).toMinutes());
 	}
 
 	@Test
@@ -369,24 +369,35 @@ class EmployeeSchedulingConstraintProviderTest {
 		Employee employee2 = new Employee("Beth", null, null, null, null, "Group1");
 		Employee employee3 = new Employee("Charlie", null, null, null, null, "Group2");
 		Employee employee4 = new Employee("David", null, null, null, null, "Group1");
+		Employee employee5 = new Employee("Eve", null, null, null, null, null); // No carpool group
 
-		 // Three employees in Group1 have shifts that start and end at the same time (reward 3 soft)
+		// Three employees in Group1 have shifts that start and end at the same time (reward by total duration)
 		constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::carpoolGroup)
 				.given(employee1, employee2, employee3, employee4,
 						new Shift("1", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee1),
 						new Shift("2", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee2),
 						new Shift("3", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee3),
 						new Shift("4", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee4))
-				.rewardsWith(3);
+				.rewardsWith((int) Duration.ofHours(8).toMinutes() * 3);
 
-		// Employee 1 and 4 from the Group1 have shifts that start and end at the same time (reward 2 soft)
+		// Employee 1 and 4 from the Group1 have shifts that start and end at the same time (reward by total duration)
 		constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::carpoolGroup)
 				.given(employee1, employee2, employee3, employee4,
 						new Shift("1", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee1),
 						new Shift("2", AFTERNOON_START_TIME, AFTERNOON_END_TIME, "Location", Set.of("Skill"), employee2),
 						new Shift("3", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee3),
 						new Shift("4", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee4))
-				.rewardsWith(2);
+				.rewardsWith((int) Duration.ofHours(8).toMinutes() * 2);
+
+		// Employee 5 with no carpool group should be excluded from rewards calculation
+		constraintVerifier.verifyThat(EmployeeSchedulingConstraintProvider::carpoolGroup)
+				.given(employee1, employee2, employee3, employee4, employee5,
+						new Shift("1", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee1),
+						new Shift("2", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee2),
+						new Shift("3", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee3),
+						new Shift("4", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee4),
+						new Shift("5", DAY_START_TIME, DAY_END_TIME, "Location", Set.of("Skill"), employee5))
+				.rewardsWith((int) Duration.ofHours(8).toMinutes() * 3);
 	}
 
 	@Test
