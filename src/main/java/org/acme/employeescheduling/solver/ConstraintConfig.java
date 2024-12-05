@@ -9,17 +9,15 @@ public class ConstraintConfig {
 	private final int shortenedBreakCompensatedPenalty = 1;
 	private final int oneShiftPerDayPenalty = 1;
 	private final int unavailableEmployeePenalty = 1;
+	
+	// Soft penalties
 	private final int undesiredDayForEmployeePenalty = 1;
 	private final int balanceEmployeeShiftAssignmentsPenalty = 1;
 	private final int shortenedBreakPenalty = 1;
-	
-
-	// Soft penalties
-	private final int desiredDayForEmployeeReward = 10;
-	private final int sameLocationAsYesterdayReward = 2;
+	private final int desiredDayForEmployeeReward = 1;
+	private final int sameLocationAsYesterdayReward = 1;
 	private final int carpoolGroupReward = 1;
-	private final int balanceShiftTypesPenalty = 20;
-	
+	private final int balanceShiftTypesPenalty = 1;
 
 	public int getRequiredSkillPenalty() {
 		return requiredSkillPenalty;
@@ -72,4 +70,5 @@ public class ConstraintConfig {
 	public int getBalanceShiftTypesPenalty() {
 		return balanceShiftTypesPenalty;
 	}
+
 }
